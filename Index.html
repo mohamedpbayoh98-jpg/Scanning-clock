@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ballon d'Or Ultimate Scanning Engine</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  background:black;
+  overflow:hidden;
+  font-family:Arial;
+  color:white;
+}
+.item{
+  position:absolute;
+  font-size:55px;
+  font-weight:bold;
+}
+#stats{
+  position:fixed;
+  top:10px;
+  left:10px;
+  font-size:18px;
+}
+#rule{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  font-size:18px;
+  color:yellow;
+}
+</style>
+</head>
+<body>
+
+<div id="stats"></div>
+<div id="rule"></div>
+
+<script>
+let score=0, correct=0, attempts=0;
+let startTime=0, target=null;
+let level=1, speed=1400;
+let currentRule="EVENODD";
+
+function randomPos(){
+  return {
+    x:Math.random()*(window.innerWidth-100),
+    y:Math.random()*(window.innerHeight-100)
+  }
+}
+
+function clearItems(){
+  document.querySelectorAll(".item").forEach(n=>n.remove());
+}
+
+function createItem(content,isTarget=false){
+  const div=document.createElement("div");
+  div.className="item";
+  div.innerText=content;
+  const pos=randomPos();
+  div.style.left=pos.x+"px";
+  div.style.top=pos.y+"px";
+  div.style.color=isTarget?"red":"white";
+  document.body.appendChild(div);
+  return div;
+}
+
+function chooseRule(){
+  currentRule=Math.random()>0.5?"EVENODD":"ARROW";
+  document.getElementById("rule").innerText=
+    currentRule==="EVENODD"?
+    "Rule: E=Even / O=Odd":
+    "Rule: L=← / R=→";
+}
+
+function showRound(){
+  clearItems();
+  attempts++;
+  chooseRule();
+
+  if(currentRule==="EVENODD"){
+    target=Math.floor(Math.random()*9)+1;
+  }else{
+    target=Math.random()>0.5?"←":"→";
+  }
+
+  createItem(target,true);
+
+  for(let i=0;i<level+3;i++){
+    const distractor=Math.random()>0.5?
+      Math.floor(Math.random()*9)+1:
+      (Math.random()>0.5?"←":"→");
+    createItem(distractor,false);
+  }
+
+  startTime=Date.now();
+
+  setTimeout(()=>{
+    clearItems();
+  }, speed);
+}
+
+function updateStats(reaction){
+  const accuracy=Math.round((correct/attempts)*100);
+  document.getElementById("stats").innerHTML=
+    "Reaction: "+reaction+" ms<br>"+
+    "Score: "+score+"<br>"+
+    "Accuracy: "+accuracy+"%<br>"+
+    "Level: "+level;
+}
+
+document.addEventListener("keydown",function(e){
+  if(!target) return;
+
+  const reaction=Date.now()-startTime;
+  let isCorrect=false;
+
+  if(currentRule==="EVENODD"){
+    if(typeof target==="number"){
+      const even=target%2===0;
+      if((e.key==="e"&&even)||(e.key==="o"&&!even)){
+        isCorrect=true;
+      }
+    }
+  }else{
+    if((e.key==="l"&&target==="←")||
+       (e.key==="r"&&target==="→")){
+      isCorrect=true;
+    }
+  }
+
+  if(isCorrect){
+    score++;
+    correct++;
+  }else{
+    score--;
+  }
+
+  updateStats(reaction);
+
+  if(correct>0 && correct%6===0){
+    level++;
+    speed=Math.max(500,speed-120);
+  }
+
+  target=null;
+  showRound();
+});
+
+showRound();
+</script>
+</body>
+</html>
